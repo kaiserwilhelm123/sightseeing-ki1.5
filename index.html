@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+
+<meta charset="UTF-8">
+<title>Sightseeing KI</title>
+
+<link rel="stylesheet" href="style.css">
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🌍 Sightseeing KI</h1>
+
+<p>Finde Sehenswürdigkeiten weltweit</p>
+
+<input id="city" placeholder="Stadt eingeben (z.B. Barcelona)">
+
+<input id="interests"
+placeholder="Interessen (museum, church, monument)">
+
+<input id="time"
+type="number"
+placeholder="Zeit in Stunden">
+
+<button onclick="search()">Empfehlungen berechnen</button>
+
+<h2>Empfehlungen</h2>
+
+<div id="results"></div>
+
+<div id="map"></div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script src="script.js"></script>
+
+</body>
+</html>
