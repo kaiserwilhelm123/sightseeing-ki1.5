@@ -7,31 +7,22 @@ map = L.map('map').setView([20,0],2);
 
 L.tileLayer(
 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-{
-maxZoom:19
-}).addTo(map);
+{maxZoom:19}
+).addTo(map);
 
 });
 
 async function search(){
 
-const city =
-document.getElementById("city").value.trim();
+const city = document.getElementById("city").value.trim();
+const interestsInput = document.getElementById("interests").value.toLowerCase();
+const timeInput = document.getElementById("time").value;
 
-const interestsInput =
-document.getElementById("interests").value
-.toLowerCase();
-
-const timeInput =
-document.getElementById("time").value;
-
-const interests =
-interestsInput
+const interests = interestsInput
 ? interestsInput.split(",").map(i=>i.trim())
 : [];
 
-const maxTime =
-timeInput ? timeInput*60 : 9999;
+const maxTime = timeInput ? timeInput*60 : 9999;
 
 if(!city){
 
@@ -42,18 +33,14 @@ return;
 
 try{
 
-const geoResponse =
-await fetch(
-`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city)}`,
-{
-headers:{
-"User-Agent":"SightseeingAI-Demo"
-}
-});
+// Stadtkoordinaten holen
+const geoResponse = await fetch(
+`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city)}`
+);
 
 const geoData = await geoResponse.json();
 
-if(geoData.length===0){
+if(!geoData.length){
 
 alert("Stadt nicht gefunden");
 return;
@@ -65,42 +52,50 @@ const lon = geoData[0].lon;
 
 map.setView([lat,lon],13);
 
+// alte Marker löschen
 markers.forEach(m=>map.removeLayer(m));
 markers=[];
 
-const overpassQuery = `
-[out:json];
-node(around:5000,${lat},${lon})["tourism"];
+const query = `
+[out:json][timeout:25];
+(
+node["tourism"](around:5000,${lat},${lon});
+node["historic"](around:5000,${lat},${lon});
+node["attraction"](around:5000,${lat},${lon});
+);
 out;
 `;
 
-const placeResponse =
-await fetch(
+const response = await fetch(
 "https://overpass-api.de/api/interpreter",
 {
 method:"POST",
-body:overpassQuery
+body:query
 });
 
-const data =
-await placeResponse.json();
+if(!response.ok){
 
-const results =
-document.getElementById("results");
+throw new Error("API Fehler");
 
+}
+
+const data = await response.json();
+
+const results = document.getElementById("results");
 results.innerHTML="";
 
-let usedTime=0;
-
-let found=false;
+let usedTime = 0;
+let found = false;
 
 data.elements.forEach(place=>{
 
-let name =
-place.tags?.name || "Unbekannter Ort";
+let name = place.tags?.name || "Unbekannter Ort";
 
 let category =
-place.tags?.tourism || "place";
+place.tags?.tourism ||
+place.tags?.historic ||
+place.tags?.attraction ||
+"Sehenswürdigkeit";
 
 if(interests.length>0){
 
@@ -132,8 +127,7 @@ card.innerHTML=
 
 results.appendChild(card);
 
-let marker =
-L.marker([place.lat,place.lon])
+let marker=L.marker([place.lat,place.lon])
 .addTo(map)
 .bindPopup(name);
 
@@ -144,15 +138,15 @@ markers.push(marker);
 if(!found){
 
 results.innerHTML=
-"<p>Keine passenden Sehenswürdigkeiten gefunden.</p>";
+"<p>Keine Sehenswürdigkeiten gefunden.</p>";
 
 }
 
-}catch(error){
+}catch(err){
 
-console.error(error);
+console.error(err);
 
-alert("Fehler beim Laden der Daten");
+alert("Fehler beim Laden der Daten. Bitte nochmal versuchen.");
 
 }
 
